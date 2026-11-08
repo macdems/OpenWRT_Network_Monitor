@@ -19,6 +19,7 @@ from .parser import (
     parse_dhcp_object, parse_hostapd_clients, normalize_nodes, parse_aggregated,
     connected_during_grace,
 )
+from .identity import decode_static_hosts, merge_identity_sources, hostname_for_ip
 from .rpc import UbusClient, RpcError
 from .telemetry import (
     parse_nodes_json, decode_leases, interfaces_from_snapshot,
@@ -136,7 +137,8 @@ class OpenWrtNetworkMonitorCoordinator(DataUpdateCoordinator):
             snapshots = {r["host"]: r["snapshot"] for r in rows}
             nodes, wifi = {}, {}
             wireless_ifaces = {}
-            leases = {}
+            dhcp_sources_by_host = {}
+            static_names_by_host = {}
             networks = []
             systems = {}
             now_mono = time.monotonic()
@@ -148,11 +150,17 @@ class OpenWrtNetworkMonitorCoordinator(DataUpdateCoordinator):
                     old = wifi.get(mac)
                     if old is None or (rec.get("signal") or -200) > (old.get("signal") or -200):
                         wifi[mac] = rec
-                leases.update(decode_leases(row["snapshot"]))
-                # Optional odhcpd names, not presence evidence.
-                dhcp = await self.rpcs[host].optional_call("dhcp", "ipv4leases")
-                if dhcp:
-                    leases.update(parse_dhcp_object(dhcp))
+                # Query each node, but give names configured on the primary
+                # DHCP router precedence over entries on secondary nodes.
+                reservations, static_names_by_ip = decode_static_hosts(row["snapshot"])
+                dynamic = decode_leases(row["snapshot"])
+                odhcpd = await self.rpcs[host].optional_call("dhcp", "ipv4leases")
+                dhcp_sources_by_host[host] = (
+                    ("dhcp_reservation", reservations),
+                    ("dnsmasq_lease", dynamic),
+                    ("odhcpd", parse_dhcp_object(odhcpd) if odhcpd else {}),
+                )
+                static_names_by_host[host] = static_names_by_ip
                 networks.extend(parse_networks(row["dump"], self.vlan_map))
                 dt = (now_mono - self._previous_mono[host]) if host in self._previous_mono else None
                 stats = interfaces_from_snapshot(
@@ -167,6 +175,11 @@ class OpenWrtNetworkMonitorCoordinator(DataUpdateCoordinator):
                     ),
                     "interfaces": stats,
                 }
+            host_order = [self.primary] + [n["host"] for n in self.nodes if n["host"] != self.primary]
+            leases = merge_identity_sources(
+                source for host in host_order for source in dhcp_sources_by_host[host]
+            )
+            names_by_ip = [static_names_by_host[host] for host in host_order]
             # Explicit opt-in only: remote usteer aggregation is not sufficiently
             # authoritative for departing Wi-Fi users under normal operation.
             if self.central:
@@ -215,7 +228,10 @@ class OpenWrtNetworkMonitorCoordinator(DataUpdateCoordinator):
                 candidates = [n for n in networks if n.get("network") == network_name]
                 if len(candidates) == 1:
                     net = candidates[0]
+            static_ip_name = hostname_for_ip(ip, names_by_ip)
             rec.update({
+                "hostname": lease.get("hostname") or static_ip_name,
+                "name_source": lease.get("name_source") or ("dhcp_domain" if static_ip_name else None),
                 "connection_type": "wifi", "ip": ip,
                 "network": net.get("network") if net else None,
                 "subnet": net.get("cidr") if net else None,
@@ -229,9 +245,18 @@ class OpenWrtNetworkMonitorCoordinator(DataUpdateCoordinator):
         changed = False
         for mac, rec in present.items():
             old = self.known.get(mac, {})
+            lease = leases.get(mac, {})
+            ip = rec.get("ip") or lease.get("ip") or old.get("ip")
+            ip_hostname = hostname_for_ip(ip, names_by_ip)
+            hostname = lease.get("hostname") or ip_hostname or rec.get("hostname") or old.get("hostname")
             metadata = {
-                "hostname": leases.get(mac, {}).get("hostname") or rec.get("hostname") or old.get("hostname"),
-                "ip": rec.get("ip") or leases.get(mac, {}).get("ip") or old.get("ip"),
+                "hostname": hostname,
+                "name_source": (
+                    lease.get("name_source") if lease.get("hostname") else
+                    "dhcp_domain" if ip_hostname else
+                    rec.get("name_source") or old.get("name_source")
+                ),
+                "ip": ip,
                 "ever_wifi": bool(old.get("ever_wifi") or mac in wifi),
                 "last_connection_type": rec["connection_type"],
             }
@@ -245,7 +270,7 @@ class OpenWrtNetworkMonitorCoordinator(DataUpdateCoordinator):
         states = {}
         for mac, info in self.known.items():
             if mac in present:
-                states[mac] = {**info, **present[mac], "connected": True,
+                states[mac] = {**present[mac], **info, "connected": True,
                                "last_seen": timestamp}
             else:
                 missed = self.missing_since.setdefault(mac, now_mono)

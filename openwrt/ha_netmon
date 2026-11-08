@@ -37,7 +37,36 @@ for dev in /sys/class/net/*; do
     sep=','
 done
 printf '},"dhcp_leases_b64":"'
-if [ -r /tmp/dhcp.leases ]; then
-    base64 < /tmp/dhcp.leases | tr -d '\n'
+# dnsmasq can store leases in non-default paths configured in UCI. No RPC
+# request argument controls these paths. /var points to /tmp in OpenWrt.
+(
+    printf '%s\n' /tmp/dhcp.leases
+    if command -v uci >/dev/null 2>&1; then
+        uci -q -X show dhcp 2>/dev/null | awk -F= \
+            '$1 ~ /^dhcp\..*\.leasefile$/ {gsub(/\047|\042/, "", $2); print $2}'
+    fi
+) | sort -u | while IFS= read -r lease_path; do
+    case "$lease_path" in /tmp/*|/var/*) ;; *) continue ;; esac
+    resolved=$(readlink -f "$lease_path" 2>/dev/null) || continue
+    case "$resolved" in /tmp/*) ;; *) continue ;; esac
+    [ -f "$resolved" ] && [ -r "$resolved" ] || continue
+    size=$(wc -c < "$resolved") || continue
+    [ "$size" -le 1000000 ] 2>/dev/null || continue
+    cat "$resolved"
+    printf '\n'
+done | base64 | tr -d '\n'
+
+# Export only the names/IPs/MACs of host and domain reservations. No other
+# UCI options leave the router. The authenticated RPC role has no UCI rights.
+printf '","dhcp_static_hosts_b64":"'
+if command -v uci >/dev/null 2>&1; then
+    uci -q -X show dhcp 2>/dev/null | awk -F= '
+        $1 ~ /^dhcp\.[^.]+$/ {
+            selected=($2 == "host" || $2 == "domain")
+            if (selected) print
+            next
+        }
+        selected && $1 ~ /^dhcp\.[^.]+\.(name|mac|ip)$/ { print }
+    ' | base64 | tr -d '\n'
 fi
 printf '"}\n'

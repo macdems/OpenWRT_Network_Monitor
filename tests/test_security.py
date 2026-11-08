@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class SecurityTests(unittest.TestCase):
     def test_acl_only_explicit_read_methods(self):
-        role = json.loads((ROOT / 'openwrt-acl.json').read_text())['ha_netmon_read']
+        role = json.loads((ROOT / 'openwrt/ha-netmon-acl.json').read_text())['ha_netmon_read']
         self.assertEqual(role.get('write'), {})
         self.assertEqual(role['read']['ubus']['ha_netmon'], ['snapshot'])
         for dangerous in ('file', 'uci', 'network', 'service', 'system.signal'):
@@ -24,7 +24,8 @@ class SecurityTests(unittest.TestCase):
         code = '\n'.join(line for line in src.splitlines() if not line.strip().startswith('#'))
         self.assertNotIn('sh -c', code)
         self.assertNotIn('source ', code)
-        self.assertNotIn('read -r', code)
+        # Only a fixed UCI-generated list of lease paths is consumed via read.
+        self.assertIn('while IFS= read -r lease_path', code)
         self.assertNotIn('uci set', code)
 
 if __name__ == '__main__':

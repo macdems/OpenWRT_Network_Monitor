@@ -1,6 +1,6 @@
 # Network Flow Card — example dashboard
 
-These generic examples target **Network Flow Card 4.x** and entities from **OpenWrt Network Monitor v0.4.0**. They are illustrative placeholders, **not an automatically discovered topology**. Adjust the node hierarchy, interface names, entity IDs, and clients to your own setup. Neither SNMP nor `card-mod` is required.
+These generic examples target **Network Flow Card 4.x** and entities from **OpenWrt Network Monitor*. They are illustrative placeholders, **not an automatically discovered topology**. Adjust the node hierarchy, interface names, entity IDs, and clients to your own setup. Neither SNMP nor `card-mod` is required.
 
 Polish versions of the same files live in [`pl/`](pl/README.md).
 

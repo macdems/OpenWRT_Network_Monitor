@@ -1,6 +1,6 @@
 # Network Flow Card — przykładowy dashboard
 
-Przykłady współpracują z **Network Flow Card 4.x** i encjami wystawianymi przez **OpenWrt Network Monitor v0.4.0**. Żaden przykład **nie jest uniwersalną, automatycznie wygenerowaną topologią**: konfigurację trzeba dostosować do własnych węzłów, interfejsów i klientów. Nie wymaga SNMP ani karty `card-mod`.
+Przykłady współpracują z **Network Flow Card 4.x** i encjami wystawianymi przez **OpenWrt Network Monitor**. Żaden przykład **nie jest uniwersalną, automatycznie wygenerowaną topologią**: konfigurację trzeba dostosować do własnych węzłów, interfejsów i klientów. Nie wymaga SNMP ani karty `card-mod`.
 
 ## Pliki
 

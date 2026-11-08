@@ -68,6 +68,7 @@ class OpenWrtNetworkClientTracker(CoordinatorEntity, ScannerEntity):
         rec = self.coordinator.data["clients"].get(self._mac, {})
         return {
             "connection_type": rec.get("connection_type"),
+            "name_source": rec.get("name_source"),
             "network": rec.get("network"),
             "vlan": rec.get("vlan"),
             "subnet": rec.get("subnet"),

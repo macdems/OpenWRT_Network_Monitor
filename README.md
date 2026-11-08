@@ -1,4 +1,4 @@
-# OpenWrt Network Monitor — v0.4.0
+# OpenWrt Network Monitor
 
 **Custom integration for Home Assistant 2026.11+**, using OpenWrt JSON-RPC `/ubus` and a tightly scoped **read-only `rpcd` executable plugin**. No SNMP, SSH account, shell over RPC, or router configuration permissions are required. All network names, VLANs, AP addresses, hierarchy and trusted wired ports are configurable. Does **not** require `usteer` in direct AP mode: `hostapd` provides local BSS/association data.
 
@@ -6,7 +6,7 @@
 
 ## Features
 
-- **Wi-Fi clients:** automatic device trackers with hostname (DHCP if available), MAC, IP, actual SSID, BSSID (`ap_mac` alias), radio frequency, band (2.4G/5G/6G), RSSI in dBm, AP name/host, logical network and VLAN when resolvable.
+- **Wi-Fi clients:** automatic device trackers with hostname resolved from dnsmasq on the primary router (including static reservations), MAC, IP, actual SSID, BSSID (`ap_mac` alias), radio frequency, band (2.4G/5G/6G), RSSI in dBm, AP name/host, logical network and VLAN when resolvable.
 - **Ethernet clients:** bridge FDB from **every configured OpenWrt AP/router/switch**, not just the main router. Identify endpoint by MAC, name, IP, VLAN, bridge, edge AP and port where learned. Handles VLANs without Wi-Fi; **DHCP leases alone never establish presence**.
 - **Configurable topology:** arbitrary OpenWrt nodes (`router`, `ap`, `switch`, `auto`) with optional upstream relationship and uplink ports; non-queryable `unmanaged_switch` placeholders with a parent node/port. The physical port beyond a dumb switch cannot be discovered.
 - **Presence:** one `device_tracker` per client MAC. Uses latest *successful full set of observations*, not cached DHCP data. Configurable zone (`zone.home` default), poll interval (20s default), consecutive-miss grace window (45s default). An AP outage makes trackers **unavailable**, not `not_home`. Records of previously seen clients persist across HA restart.
@@ -45,7 +45,7 @@
    /usr/libexec/rpcd/ha_netmon call snapshot | jsonfilter -e '@.links'
    ```
 
-   **Method**: `ha_netmon.snapshot {}`. The executable has a fixed `list/call snapshot` dispatch, **does not parse request JSON**, and reads only `bridge -j fdb show`, `ip -j -4 neigh show`, `ip -j -s link show`, `/proc/stat`, link-speed sysfs files and `/tmp/dhcp.leases` (as Base64). It has **no remote command, file path, arbitrary argument, edit, restart or control method**. It runs as part of `rpcd` (often root), so keep it `root:root`, non-writable by other users, and review source before installing.
+   **Method**: `ha_netmon.snapshot {}`. The executable has a fixed `list/call snapshot` dispatch, **does not parse request JSON**, and reads only `bridge -j fdb show`, `ip -j -4 neigh show`, `ip -j -s link show`, `/proc/stat`, link-speed sysfs files and dnsmasq leasefiles (as Base64), plus a filtered set of DHCP host/domain names from UCI. It has **no remote command, file path, arbitrary argument, edit, restart or control method**. It runs as part of `rpcd` (often root), so keep it `root:root`, non-writable by other users, and review source before installing.
 
 1. Copy `openwrt/ha-netmon-acl.json` to `/usr/share/rpcd/acl.d/ha-netmon.json`.
 
@@ -110,6 +110,27 @@ openssl x509 -in /etc/uhttpd.crt -noout -fingerprint -sha256
 ```
 
 Remove colons before pasting, or leave them (both formats are accepted). A changed certificate fingerprint causes a connection failure until re-pinned. HTTP is available for deliberately isolated management networks but **passes RPC credentials without TLS encryption**, so it is less secure. Never expose the RPC endpoint publicly.
+
+## DHCP hostname resolution
+
+Client names are obtained **primarily from the router configured as the primary node**. The read-only helper provides two identity-only sources in `ha_netmon.snapshot`:
+
+- `dhcp_static_hosts_b64`: only `name`, `mac`, and `ip` fields from `config host` and `config domain` sections of `/etc/config/dhcp`; other UCI settings are never exported. Static host names bind by MAC, domain entries by IP.
+- `dhcp_leases_b64`: current dnsmasq DHCPv4 lease entries from the default `/tmp/dhcp.leases` and additional lease files explicitly configured with dnsmasq's `leasefile` UCI option. For safety, only regular files resolving inside `/tmp` are read (on OpenWrt `/var` normally resolves to `/tmp`).
+
+The primary node's static names take precedence over its dynamic lease hostnames, then odhcpd names. Other OpenWrt nodes are fallbacks and cannot overwrite a valid primary-router name with a missing one. The names are cached to keep devices recognizable while offline. A lease containing `*` has **no hostname**, so a reservation or another source is required. A device with a manually configured IP but no DHCP/DNS registration may still display its MAC.
+
+These data are strictly **identity metadata**. Lease existence or a configured static reservation does not mark the device `home`; active association/FDB logic is unchanged.
+
+To troubleshoot on the **router** (output contains local client details; do not post publicly without redaction):
+
+```sh
+ubus call ha_netmon snapshot | jsonfilter -e '@.dhcp_leases_b64' | base64 -d
+ubus call ha_netmon snapshot | jsonfilter -e '@.dhcp_static_hosts_b64' | base64 -d
+uci -q show dhcp | grep -E '(leasefile|\.name=|\.mac=|\.ip=)'
+```
+
+Once HA receives a hostname, it updates the Home Assistant **device name** unless the user has customized that name. Home Assistant does not automatically rename existing `device_tracker.*` entity IDs (which could be used in automations); you can rename a previously MAC-based entity ID in the entity settings. The tracker's `name_source` attribute identifies how a name was resolved.
 
 ## B. Install the Home Assistant custom integration
 
@@ -209,7 +230,3 @@ openwrt/ha_netmon call snapshot | python3 -m json.tool >/dev/null
 ```
 
 Read-only ACL tests exercise the static ACL and helper; the on-router `tools/audit_acl.py` test is required to validate **actual effective permissions**, because extra roles from other OpenWrt packages can widen them.
-
-## E. Documentation
-
-- [OpenWrt Ubus Documentation](https://openwrt.org/docs/techref/ubus)
