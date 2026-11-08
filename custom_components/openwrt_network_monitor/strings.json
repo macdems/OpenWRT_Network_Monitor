@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OpenWrt RPC connection",
+        "description": "A read-only ha_netmon plugin and ACL are required on every OpenWrt node.",
+        "data": {
+          "host": "Primary router host/IP",
+          "username": "RPC user",
+          "password": "RPC password",
+          "port": "RPC port",
+          "https": "Use HTTPS (certificate must be trusted)",
+          "home_zone": "Presence zone",
+          "tls_fingerprint": "SHA-256 certificate fingerprint (optional)"
+        },
+        "data_description": {
+          "home_zone": "Choose the zone for connected clients; usually zone.home."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot read ha_netmon.snapshot or system.info. Check helper, ACL and network access."
+    },
+    "abort": {
+      "already_configured": "Already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Network monitoring settings",
+        "data": {
+          "home_zone": "Connected zone",
+          "interval": "Polling interval (seconds)",
+          "grace_seconds": "Departure grace (seconds)",
+          "wired_enabled": "Track Ethernet clients using FDB",
+          "central_usteer": "Also use central usteer (may retain stale associations)",
+          "primary_name": "Primary router label",
+          "primary_uplink_ports": "Primary node uplink ports (space/comma separated)",
+          "nodes_json": "Additional OpenWrt devices (JSON array)",
+          "vlan_map": "Optional interface=VLAN mapping",
+          "primary_edge_ports": "Primary verified client-facing Ethernet ports"
+        },
+        "data_description": {
+          "nodes_json": "Each entry may specify host, name, upstream, uplink_ports, role, port, https, username, password; see README.",
+          "vlan_map": "One interface=VID per line, or comma-separated. Nothing is hard-coded."
+        }
+      }
+    },
+    "error": {
+      "invalid_configuration": "Invalid JSON nodes, uplink ports, topology, or VLAN mapping"
+    }
+  }
+}

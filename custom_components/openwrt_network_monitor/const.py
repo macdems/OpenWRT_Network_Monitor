@@ -1,0 +1,19 @@
+"""Config keys and defaults: no site-specific networks or APs."""
+DOMAIN = "openwrt_network_monitor"
+CONF_HOST = "host"
+CONF_PORT = "port"
+CONF_USERNAME = "username"
+CONF_PASSWORD = "password"
+CONF_HTTPS = "https"
+CONF_NODES = "nodes_json"  # additional OpenWrt routers/APs as a JSON list
+CONF_ZONE = "home_zone"
+CONF_INTERVAL = "interval"
+CONF_GRACE = "grace_seconds"
+CONF_VLAN_MAP = "vlan_map"  # optional manual override
+CONF_WIRED_ENABLED = "wired_enabled"
+CONF_CENTRAL = "central_usteer"  # fallback for users without RPC on every AP
+DEFAULT_PORT = 443
+DEFAULT_INTERVAL = 20
+DEFAULT_GRACE = 45
+DEFAULT_ZONE = "zone.home"
+PLATFORMS = ["device_tracker", "sensor", "binary_sensor"]

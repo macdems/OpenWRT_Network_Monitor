@@ -1,0 +1,157 @@
+# Example COMPLETE Home Assistant dashboard (raw YAML dashboard editor).
+# Alternative to pasting just one card from network-flow-card.yaml.
+# This file embeds the card configuration; do not use "!include" in the UI editor.
+# Requires Network Flow Card 4.x and replacement of example entity IDs.
+title: Network Monitor
+views:
+  - title: Network
+    path: network
+    icon: mdi:lan
+    cards:
+      - type: custom:network-flow-card
+        title: Network topology
+        view_mode: hyperbolic
+        hyperbolic_layout: auto
+        hyperbolic_client_layout: grouped
+        hyperbolic_show_details: true
+        hyperbolic_details_popup: true
+        hyperbolic_show_clients: true
+        hyperbolic_show_graphs: true
+        hyperbolic_graph_range: 6h
+        show_summary: true
+        summary_position: top
+        summary_items:
+          - realtime_download
+          - realtime_upload
+        enable_animations: true
+        flow_line_color: "var(--primary-color)"
+        router:
+          entity: sensor.router_load_1m
+          icon: mdi:router-network
+          entities:
+            download: sensor.router_wan_rx_bandwidth
+            upload: sensor.router_wan_tx_bandwidth
+        nodes:
+          - name: Access points
+            switch: null
+            access_points:
+              - entity: sensor.ap_alpha_load_1m
+                name: AP Alpha
+                icon: mdi:access-point-network
+                is_primary: true
+                entities:
+                  connected_devices: sensor.ap_alpha_wifi_clients_total
+              - entity: sensor.ap_beta_load_1m
+                name: AP Beta
+                icon: mdi:access-point-network
+                entities:
+                  connected_devices: sensor.ap_beta_wifi_clients_total
+          - name: Switch LAN (uplink)
+            switch:
+              entity: binary_sensor.router_lan_port_link
+              name: Switch LAN
+              icon: mdi:lan
+            access_points: []
+        individual_devices:
+          - entity: device_tracker.phone
+            icon: mdi:cellphone
+          - entity: device_tracker.workstation
+            icon: mdi:laptop
+          - entity: device_tracker.printer
+            icon: mdi:printer
+
+      - type: heading
+        heading: Infrastructure load
+        icon: mdi:cpu-64-bit
+      - type: grid
+        columns: 3
+        square: false
+        cards:
+          - type: gauge
+            name: Router CPU
+            entity: sensor.router_cpu_usage
+            min: 0
+            max: 100
+            needle: true
+            severity:
+              green: 0
+              yellow: 60
+              red: 85
+          - type: gauge
+            name: AP Alpha CPU
+            entity: sensor.ap_alpha_cpu_usage
+            min: 0
+            max: 100
+            needle: true
+            severity:
+              green: 0
+              yellow: 60
+              red: 85
+          - type: gauge
+            name: AP Beta CPU
+            entity: sensor.ap_beta_cpu_usage
+            min: 0
+            max: 100
+            needle: true
+            severity:
+              green: 0
+              yellow: 60
+              red: 85
+
+      - type: heading
+        heading: WAN utilization
+        icon: mdi:chart-line
+      - type: history-graph
+        title: WAN — download and upload (Mbit/s)
+        hours_to_show: 6
+        refresh_interval: 60
+        entities:
+          - entity: sensor.router_wan_rx_bandwidth
+            name: Download (RX)
+          - entity: sensor.router_wan_tx_bandwidth
+            name: Upload (TX)
+
+      - type: grid
+        columns: 2
+        square: false
+        cards:
+          - type: entities
+            title: Router
+            show_header_toggle: false
+            entities:
+              - entity: sensor.router_load_1m
+                name: Load average (1 min)
+              - entity: sensor.router_memory_usage
+                name: RAM
+              - entity: sensor.router_uptime
+                name: Uptime
+              - entity: binary_sensor.router_wan_link
+                name: WAN link
+          - type: entities
+            title: Access points and Wi-Fi clients
+            show_header_toggle: false
+            entities:
+              - entity: sensor.ap_alpha_wifi_clients_total
+                name: AP Alpha — clients
+              - entity: sensor.ap_beta_wifi_clients_total
+                name: AP Beta — clients
+              - entity: sensor.ap_alpha_memory_usage
+                name: AP Alpha — RAM
+              - entity: sensor.ap_beta_memory_usage
+                name: AP Beta — RAM
+
+      - type: markdown
+        title: Ethernet — clients by logical network
+        content: >-
+          {% set groups = state_attr('sensor.ethernet_clients_all', 'by_network') or {} %}
+          **Connected Ethernet clients:** {{ states('sensor.ethernet_clients_all') }}
+
+          {% if groups %}
+          | Network | Clients |
+          |:-----|-------:|
+          {% for name, count in groups | dictsort %}
+          | {{ name }} | {{ count }} |
+          {% endfor %}
+          {% else %}
+          No wired-client data available.
+          {% endif %}

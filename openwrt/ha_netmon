@@ -1,0 +1,43 @@
+#!/bin/sh
+# OpenWrt rpcd executable plugin. All externally exposed functionality is READ ONLY.
+# rpcd invokes `ha_netmon list`, then `ha_netmon call snapshot` with JSON on stdin.
+# No request data, parameters or environment variables from stdin are consumed.
+# Install owned by root:root and mode 0755 (NEVER writable by rpcd users).
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+case "$1" in
+    list)
+        printf '{"snapshot":{}}\n'
+        exit 0
+        ;;
+    call)
+        [ "$2" = snapshot ] || exit 1
+        ;;
+    *) exit 1 ;;
+esac
+# If any essential tool fails, fail the RPC rather than emitting false empty
+# presence observations. Avoid eval, sh -c, dynamic commands and shell input.
+command -v bridge >/dev/null 2>&1 || exit 2
+command -v ip >/dev/null 2>&1 || exit 2
+fdb=$(bridge -j fdb show) || exit 3
+neigh=$(ip -j -4 neigh show) || exit 3
+links=$(ip -j -s link show) || exit 3
+printf '{"fdb":%s,"neighbours":%s,"links":%s,"cpu_ticks":' "$fdb" "$neigh" "$links"
+awk '$1 == "cpu" { printf "["; for (i=2;i<=9;i++) printf "%s%s", (i>2 ? "," : ""), ($i+0); print "]"; found=1; exit } END {if(!found) print "[]"}' /proc/stat
+printf ',"speeds_mbps":{'
+sep=''
+for dev in /sys/class/net/*; do
+    [ -d "$dev" ] || continue
+    name=${dev##*/}
+    # Reject unusual interface names rather than interpolating unsafe JSON.
+    case "$name" in *[!a-zA-Z0-9_.:-]*|'') continue;; esac
+    speed=$(cat "$dev/speed" 2>/dev/null) || continue
+    case "$speed" in ''|*[!0-9]*) continue;; esac
+    [ "$speed" -gt 0 ] 2>/dev/null || continue
+    printf '%s"%s":%s' "$sep" "$name" "$speed"
+    sep=','
+done
+printf '},"dhcp_leases_b64":"'
+if [ -r /tmp/dhcp.leases ]; then
+    base64 < /tmp/dhcp.leases | tr -d '\n'
+fi
+printf '"}\n'

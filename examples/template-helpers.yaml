@@ -1,0 +1,30 @@
+# EXAMPLE fragment for /config/configuration.yaml (or an HA package).
+# Replace all sensor.* in state: and availability: with your actual entity IDs.
+# Validate your HA configuration and reload templates / restart HA after adding.
+# NOTE: each AP typically has a SEPARATE client-count sensor per BSSID/SSID;
+# entity IDs may have _2/_3 suffixes when BSSes share the same SSID.
+template:
+  - sensor:
+      - name: AP Alpha WiFi clients total
+        unique_id: example_ap_alpha_wifi_clients_total
+        icon: mdi:wifi
+        unit_of_measurement: clients
+        state_class: measurement
+        availability: >-
+          {{ is_number(states('sensor.ap_alpha_primary_wifi_clients'))
+             or is_number(states('sensor.ap_alpha_secondary_wifi_clients')) }}
+        state: >-
+          {{ states('sensor.ap_alpha_primary_wifi_clients') | int(0)
+             + states('sensor.ap_alpha_secondary_wifi_clients') | int(0) }}
+
+      - name: AP Beta WiFi clients total
+        unique_id: example_ap_beta_wifi_clients_total
+        icon: mdi:wifi
+        unit_of_measurement: clients
+        state_class: measurement
+        availability: >-
+          {{ is_number(states('sensor.ap_beta_primary_wifi_clients'))
+             or is_number(states('sensor.ap_beta_secondary_wifi_clients')) }}
+        state: >-
+          {{ states('sensor.ap_beta_primary_wifi_clients') | int(0)
+             + states('sensor.ap_beta_secondary_wifi_clients') | int(0) }}

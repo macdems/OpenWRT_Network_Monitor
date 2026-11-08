@@ -1,0 +1,69 @@
+# Przykładowa konfiguracja JEDNEJ karty (Dashboard -> Edytuj -> Dodaj kartę -> Ręcznie).
+# Wymaga Network Flow Card 4.x: https://github.com/benmac7/network-flow-card
+# Wszystkie entity_id są PRZYKŁADAMI i trzeba je dopasować do własnych encji.
+# Patrz examples/pl/README.md. Nie jest to automatycznie odkryta topologia.
+type: custom:network-flow-card
+title: Sieć domowa
+view_mode: hyperbolic
+hyperbolic_layout: auto
+hyperbolic_show_details: true
+hyperbolic_details_popup: true
+hyperbolic_show_clients: true
+hyperbolic_show_graphs: true
+hyperbolic_graph_range: 6h
+# "grouped" jest najpewniejsze dla niespecyficznej integracji.
+# Po weryfikacji mapowania AP w Network Flow Card spróbuj "attached".
+hyperbolic_client_layout: grouped
+show_summary: true
+summary_position: top
+summary_items:
+  - realtime_download
+  - realtime_upload
+show_ip_addressing: false
+enable_animations: true
+flow_line_color: "var(--primary-color)"
+
+router:
+  entity: sensor.router_load_1m
+  icon: mdi:router-network
+  entities:
+    # WAN: RX = download, TX = upload; wybierz JEDEN interfejs WAN.
+    download: sensor.router_wan_rx_bandwidth
+    upload: sensor.router_wan_tx_bandwidth
+
+nodes:
+  - name: Punkty dostępowe
+    switch: null
+    access_points:
+      - name: AP Alpha
+        entity: sensor.ap_alpha_load_1m
+        icon: mdi:access-point-network
+        is_primary: true
+        entities:
+          # Pomocniczy sensor z examples/template-helpers.yaml,
+          # sumujący wszystkie BSS/SSID danego AP.
+          connected_devices: sensor.ap_alpha_wifi_clients_total
+      - name: AP Beta
+        entity: sensor.ap_beta_load_1m
+        icon: mdi:access-point-network
+        entities:
+          connected_devices: sensor.ap_beta_wifi_clients_total
+  # Opcjonalny węzeł prezentujący NIEZARZĄDZALNY switch.
+  # Oznaczamy tylko stan PORTU UPLINK na routerze, a nie zdrowie switcha.
+  # Usuń sekcję, jeżeli switch nie jest podpięty w ten sposób.
+  - name: Switch LAN (uplink)
+    switch:
+      entity: binary_sensor.router_lan_port_link
+      name: Switch LAN
+      icon: mdi:lan
+    access_points: []
+
+# Karta NIE pobiera automatycznie wszystkich trackerów niestandardowej integracji.
+# Dodawaj tutaj rzeczywiście istniejące encje (lub użyj edytora karty).
+individual_devices:
+  - entity: device_tracker.phone
+    icon: mdi:cellphone
+  - entity: device_tracker.workstation
+    icon: mdi:laptop
+  - entity: device_tracker.printer
+    icon: mdi:printer

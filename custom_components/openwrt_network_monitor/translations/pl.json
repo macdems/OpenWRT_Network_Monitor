@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Połączenie RPC OpenWrt",
+        "description": "Na każdym urządzeniu OpenWrt musi działać moduł ha_netmon z ACL tylko do odczytu.",
+        "data": {
+          "host": "Adres głównego routera",
+          "username": "Użytkownik RPC",
+          "password": "Hasło RPC",
+          "port": "Port RPC",
+          "https": "Użyj HTTPS (zaufany certyfikat)",
+          "home_zone": "Strefa obecności",
+          "tls_fingerprint": "Odcisk SHA-256 certyfikatu (opcjonalnie)"
+        },
+        "data_description": {
+          "home_zone": "Wybierz strefę przypisaną do podłączonych klientów; zwykle zone.home."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie można odczytać ha_netmon.snapshot lub system.info. Sprawdź ACL, moduł i łączność."
+    },
+    "abort": {
+      "already_configured": "Już skonfigurowano"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Ustawienia monitorowania sieci",
+        "data": {
+          "home_zone": "Strefa połączenia",
+          "interval": "Interwał odpytywania (s)",
+          "grace_seconds": "Opóźnienie nieobecności (s)",
+          "wired_enabled": "Wykrywaj klientów Ethernet przez FDB",
+          "central_usteer": "Uwzględnij centralne usteer (może mieć nieaktualne wpisy)",
+          "primary_name": "Nazwa głównego routera",
+          "primary_uplink_ports": "Porty uplink głównego routera",
+          "nodes_json": "Pozostałe routery/AP OpenWrt (JSON)",
+          "vlan_map": "Opcjonalne mapowanie interfejs=VLAN",
+          "primary_edge_ports": "Porty Ethernet z potwierdzonymi klientami końcowymi"
+        },
+        "data_description": {
+          "nodes_json": "Każdy wpis może zawierać host, name, upstream, uplink_ports, role, port, https, username i password; szczegóły w README.",
+          "vlan_map": "Jeden wpis interfejs=VID w wierszu albo lista rozdzielona przecinkami. Brak stałych ustawień."
+        }
+      }
+    },
+    "error": {
+      "invalid_configuration": "Nieprawidłowa konfiguracja JSON, VLAN lub topologii"
+    }
+  }
+}

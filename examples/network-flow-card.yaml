@@ -1,0 +1,69 @@
+# Example configuration for ONE card (Dashboard -> Edit -> Add card -> Manual).
+# Requires Network Flow Card 4.x: https://github.com/benmac7/network-flow-card
+# Every entity_id is a PLACEHOLDER; replace with your actual Home Assistant entities.
+# See examples/README.md. This is not an auto-discovered topology.
+type: custom:network-flow-card
+title: Network overview
+view_mode: hyperbolic
+hyperbolic_layout: auto
+hyperbolic_show_details: true
+hyperbolic_details_popup: true
+hyperbolic_show_clients: true
+hyperbolic_show_graphs: true
+hyperbolic_graph_range: 6h
+# "grouped" is safest for integrations without native client-placement support.
+# Try "attached" only after verifying the access point mapping in this card.
+hyperbolic_client_layout: grouped
+show_summary: true
+summary_position: top
+summary_items:
+  - realtime_download
+  - realtime_upload
+show_ip_addressing: false
+enable_animations: true
+flow_line_color: "var(--primary-color)"
+
+router:
+  entity: sensor.router_load_1m
+  icon: mdi:router-network
+  entities:
+    # WAN: RX = download, TX = upload; select ONE actual WAN interface.
+    download: sensor.router_wan_rx_bandwidth
+    upload: sensor.router_wan_tx_bandwidth
+
+nodes:
+  - name: Access points
+    switch: null
+    access_points:
+      - name: AP Alpha
+        entity: sensor.ap_alpha_load_1m
+        icon: mdi:access-point-network
+        is_primary: true
+        entities:
+          # Optional helper sensor from examples/template-helpers.yaml,
+          # aggregating all BSS/SSIDs of the same access point.
+          connected_devices: sensor.ap_alpha_wifi_clients_total
+      - name: AP Beta
+        entity: sensor.ap_beta_load_1m
+        icon: mdi:access-point-network
+        entities:
+          connected_devices: sensor.ap_beta_wifi_clients_total
+  # Optional node representing an UNMANAGED switch.
+  # Indicates the ROUTER UPLINK PORT state, NOT the switch health.
+  # Remove this node if your topology does not match the placeholder.
+  - name: Switch LAN (uplink)
+    switch:
+      entity: binary_sensor.router_lan_port_link
+      name: Switch LAN
+      icon: mdi:lan
+    access_points: []
+
+# The card does NOT automatically import all custom integration trackers.
+# Add existing tracker entities here (or select them in the visual editor).
+individual_devices:
+  - entity: device_tracker.phone
+    icon: mdi:cellphone
+  - entity: device_tracker.workstation
+    icon: mdi:laptop
+  - entity: device_tracker.printer
+    icon: mdi:printer

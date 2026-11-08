@@ -1,0 +1,18 @@
+{
+  "ha_netmon_read": {
+    "description": "Read-only OpenWrt network telemetry for Home Assistant; no file exec, shell, UCI or administrative methods",
+    "read": {
+      "ubus": {
+        "ha_netmon": [ "snapshot" ],
+        "system": [ "info", "board" ],
+        "network.device": [ "status" ],
+        "network.interface": [ "dump" ],
+        "hostapd.*": [ "get_clients", "get_status" ],
+        "usteer": [ "local_info", "remote_info", "get_clients" ],
+        "dhcp": [ "ipv4leases" ],
+        "network.wireless": [ "status" ]
+      }
+    },
+    "write": {}
+  }
+}
