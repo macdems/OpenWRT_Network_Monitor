@@ -103,7 +103,7 @@ def parse_fdb_json(snapshot: dict, host: str, excluded_ports: set[str]) -> list[
             continue
         if int(mac[:2], 16) & 1:
             continue
-        port = item.get("dev")
+        port = item.get("ifname")
         if not isinstance(port, str) or port in excluded_ports:
             continue
         flags = item.get("flags", [])
