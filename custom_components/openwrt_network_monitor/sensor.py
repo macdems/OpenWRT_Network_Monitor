@@ -11,7 +11,7 @@ from .const import DOMAIN
 STATS = {
     "cpu_percent": ("CPU usage", "%", "mdi:cpu-64-bit"),
     "memory_percent": ("Memory usage", "%", "mdi:memory"),
-    "memory_available": ("Available memory", "B", "mdi:memory"),
+    "memory_available": ("Available memory", "MiB", "mdi:memory"),
     "load_1": ("Load 1m", None, "mdi:speedometer"),
     "load_5": ("Load 5m", None, "mdi:speedometer"),
     "load_15": ("Load 15m", None, "mdi:speedometer"),

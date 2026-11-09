@@ -9,7 +9,7 @@ The integration domain is **`openwrt_network_monitor`**. Installable Python code
 ## General-purpose design
 
 - Never hardcode any deployment-specific address, hostname, MAC, AP inventory, interface name, SSID, VLAN ID, credentials, network layout, or zone other than the default `zone.home`.
-- Permit a configurable number of OpenWrt routers, APs, and switches, optional unmanaged-switch placeholders, upstream relationships, uplink ports, and verified edge ports. Physical topology is incomplete if hardware cannot expose a downstream port; don't fabricate information.
+- Permit a configurable number of OpenWrt routers, APs, and switches, optional unmanaged-switch placeholders, upstream relationships, uplink ports, and verified edge ports. The Home Assistant options flow must expose add/edit/remove screens instead of asking the user to edit JSON manually; stage all changes and commit them atomically. Physical topology is incomplete if hardware cannot expose a downstream port; don't fabricate information.
 - VLANs and subnets are determined from OpenWrt network/interface data, with user-configured overrides only where necessary. A network may have zero, one, or many SSIDs. SSID is not a reliable VLAN identifier.
 - Use public documentation ranges (e.g. `192.0.2.0/24`) and invented generic names (AP Alpha, AP Beta) in documentation, tests, and examples. No private network topology or user-specific details should appear anywhere in distributed files.
 

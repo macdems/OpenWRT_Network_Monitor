@@ -183,7 +183,8 @@ def system_stats(info: dict, cpu: float | None) -> dict:
     if not isinstance(available, (float, int)):
         available = sum(memory.get(k, 0) for k in ("free", "buffered", "cached"))
     values.update({"uptime": info.get("uptime"), "cpu_percent": cpu,
-                   "memory_total": total, "memory_available": available,
+                   "memory_total": total,
+                   "memory_available":  round(available / 1048576, 3) if isinstance(available, (int, float)) else None,
                    "memory_percent": round(100 * (total - available) / total, 1)
                    if isinstance(total, (int, float)) and total > 0 else None})
     return values

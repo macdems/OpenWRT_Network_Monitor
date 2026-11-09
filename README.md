@@ -136,42 +136,31 @@ Once HA receives a hostname, it updates the Home Assistant **device name** unles
 
 Copy `custom_components/openwrt_network_monitor/` into HA at `/config/custom_components/openwrt_network_monitor/`, restart HA, then add **OpenWrt Network Monitor** under **Settings → Devices & services → Add integration**. Enter the primary OpenWrt host, RPC login, HTTPS port (443 by default, configurable), optional SHA-256 certificate fingerprint, and connected zone (defaults `zone.home`). The setup flow validates `ha_netmon.snapshot` and `system.info` on the primary node.
 
-In **Configure** options, set polling, departure grace, VLAN overrides, and additional OpenWrt nodes as a JSON list. Each listed node can override `username`, `password`, `port`, `https`, and `tls_fingerprint` from the primary node. If omitted, credentials/port/protocol are inherited. To keep different passwords secret, remember that Home Assistant stores integration options in its configuration storage; protect HA backups.
+## Manage network devices in Home Assistant
+
+Go to **Settings → Devices & services → OpenWrt Network Monitor → Configure**.
+The options menu lets you:
+
+1. **General settings** — polling interval, departure grace, connected zone, VLAN overrides, and the main router’s name/uplink/verified edge ports.
+2. **Add OpenWrt router, AP or switch** — choose its role, name, IP/host, upstream device, uplink interfaces, trusted client-facing ports, HTTPS/HTTP port, and TLS fingerprint. Enable hostapd collection on devices with Wi-Fi.
+3. **Add unmanaged switch** — create a topology-only placeholder using its unique identifier, upstream node and the port on that upstream node. An unmanaged switch is not contacted by RPC.
+4. **Edit existing device / Remove existing device** — select a node from a dropdown. A node with downstream children must be detached from them before removal.
+5. **Save and finish** — apply all staged changes together and reload the integration once. Leaving the options flow without saving discards the staged changes.
+
+For a managed OpenWrt node, **Use primary router credentials** is enabled by default. Turn it off to enter an independent RPC username and password in a separate password-masked form. When editing a device, leave the password blank to retain its current secret; turn on inheritance to stop using per-device credentials. Each node may independently configure its HTTPS/HTTP port, protocol and optional SHA-256 TLS certificate fingerprint. The form checks connectivity and the required **read-only** RPC methods before accepting a node. It does not execute any configuration changes on OpenWrt.
 
 ### Generic topology example (not a required network configuration)
 
-Set `Additional OpenWrt devices (JSON array)` to e.g.:
+For an arbitrary network, a possible sequence of UI actions is:
 
-```json
-[
-  {
-    "host": "192.0.2.2",
-    "name": "AP Alpha",
-    "role": "ap",
-    "upstream": "192.0.2.1",
-    "uplink_ports": ["lan1"],
-    "edge_ports": ["lan2", "lan3"]
-  },
-  {
-    "host": "192.0.2.3",
-    "name": "AP Beta",
-    "role": "ap",
-    "upstream": "192.0.2.1",
-    "uplink_ports": ["lan1"]
-  },
-  {
-    "host": "unmanaged-switch-1",
-    "name": "Unmanaged switch A",
-    "role": "unmanaged_switch",
-    "upstream": "192.0.2.2",
-    "parent_port": "lan2"
-  }
-]
-```
+1. Add an AP named **Access Point A** with host `192.0.2.2`, role `ap`, upstream `192.0.2.1`, and uplink port `lan1`.
+2. Add a second AP named **Access Point B** with host `192.0.2.3`, the same upstream, and the uplink port used on that AP.
+3. Optionally add an unmanaged switch named **Switch A** with identifier `unmanaged-switch-a`, upstream `192.0.2.2`, and parent port `lan2`.
+4. Select **Save and finish**. The primary router address in this example (`192.0.2.1`) is only illustrative; choose your actual node from the upstream dropdown.
 
-Replace the first IP `192.0.2.1` with the actual primary router from the config flow. `unmanaged_switch` is a **virtual placeholder**, never polled: hosts learned on the parent's `parent_port` are attributed to that switch without claiming which downstream switch port they use. If your dumb switch connects directly to the main router, use the router IP as its `upstream` instead. Hardware switch ports must actually be exposed by Linux `bridge fdb` for the final-port association to work; DSA/offloading limitations still apply.
+You may register up to 32 additional devices. OpenWrt-managed roles are `router`, `ap`, `switch`, and `auto`. A virtual unmanaged switch has no RPC connection and exposes no internal port information. Host changes in the edit form automatically update references from downstream nodes. Users cannot accidentally remove a parent that is still referenced by another node.
 
-Allowed node roles: `router`, `ap`, `switch` (all require an OpenWrt RPC endpoint), `auto`, and `unmanaged_switch` (placeholder only). You can configure up to 32 additional entries. Every node may specify `name`, `host`, `upstream`, `uplink_ports`, `edge_ports`, `role`, and read-only RPC connection overrides. The primary router's label, uplink ports, and verified edge ports are separate options in the same form.
+**Security and access:** Every OpenWrt endpoint must run the fixed `ha_netmon.snapshot` helper and have the restricted ACL installed. The HA user requires only read methods; never give it the `file.exec`, `uci`, or administrative roles. Per-device credentials are stored by Home Assistant in its configuration storage, which must be protected along with backups. RPC credentials are never shown in the configuration editor once saved. HTTPS with a valid certificate or pinned SHA-256 fingerprint is strongly recommended.
 
 **Port fields matter:** `uplink_ports` are ports towards a higher-level node; exclude their FDB observations to avoid double counting and misplacing clients. `edge_ports` are a narrower, explicitly trusted list of ports where *wired endpoint traffic* is observed (direct host or unmanaged switch). Only those can be used to reclassify a MAC previously detected over Wi-Fi. Don't add AP trunk ports to `edge_ports`.
 

@@ -28,27 +28,138 @@
   "options": {
     "step": {
       "init": {
-        "title": "Network monitoring settings",
+        "title": "Network inventory",
+        "description": "Additional devices: {count}. Current inventory: {devices}. Changes are applied only after Save and finish.",
+        "menu_options": {
+          "settings": "General settings",
+          "add_node": "Add OpenWrt router, AP or switch",
+          "add_virtual": "Add unmanaged switch (virtual)",
+          "edit_select": "Edit existing device",
+          "remove_select": "Remove existing device",
+          "finish": "Save and finish"
+        }
+      },
+      "settings": {
+        "title": "General monitoring settings",
         "data": {
-          "home_zone": "Connected zone",
+          "home_zone": "Presence zone",
           "interval": "Polling interval (seconds)",
           "grace_seconds": "Departure grace (seconds)",
-          "wired_enabled": "Track Ethernet clients using FDB",
-          "central_usteer": "Also use central usteer (may retain stale associations)",
-          "primary_name": "Primary router label",
-          "primary_uplink_ports": "Primary node uplink ports (space/comma separated)",
-          "nodes_json": "Additional OpenWrt devices (JSON array)",
-          "vlan_map": "Optional interface=VLAN mapping",
-          "primary_edge_ports": "Primary verified client-facing Ethernet ports"
+          "wired_enabled": "Monitor Ethernet clients",
+          "central_usteer": "Supplement Wi-Fi data with central usteer (may be stale)",
+          "primary_name": "Primary router display name",
+          "primary_uplink_ports": "Primary router uplink ports",
+          "primary_edge_ports": "Verified client-facing Ethernet ports",
+          "vlan_map": "Optional interface=VLAN mapping"
         },
         "data_description": {
-          "nodes_json": "Each entry may specify host, name, upstream, uplink_ports, role, port, https, username, password; see README.",
-          "vlan_map": "One interface=VID per line, or comma-separated. Nothing is hard-coded."
+          "primary_uplink_ports": "Comma/space separated interface names.",
+          "primary_edge_ports": "Only direct end-device ports, never AP/trunk uplinks.",
+          "vlan_map": "Optional override. One interface=VID per line."
         }
+      },
+      "add_node": {
+        "title": "Add OpenWrt device",
+        "data": {
+          "host": "Host or IP address",
+          "name": "Display name",
+          "role": "Device role",
+          "upstream": "Upstream device",
+          "uplink_ports": "Uplink interfaces",
+          "edge_ports": "Direct end-device interfaces",
+          "port": "RPC HTTPS/HTTP port",
+          "https": "Use HTTPS",
+          "tls_fingerprint": "TLS SHA-256 fingerprint (optional)",
+          "use_primary_credentials": "Use primary router credentials",
+          "wifi": "Read Wi-Fi clients from hostapd"
+        },
+        "data_description": {
+          "uplink_ports": "Separated by commas or spaces; these ports lead toward upstream devices.",
+          "edge_ports": "Use only verified end-device Ethernet ports. Do not include AP or switch uplinks.",
+          "use_primary_credentials": "If disabled, the next form will ask for an independent RPC login.",
+          "tls_fingerprint": "64 hex digits, optionally colon-separated; HTTPS required.",
+          "host": "RPC endpoint; no URL prefix or path."
+        }
+      },
+      "edit_node": {
+        "title": "Edit OpenWrt device",
+        "data": {
+          "host": "Host or IP address",
+          "name": "Display name",
+          "role": "Device role",
+          "upstream": "Upstream device",
+          "uplink_ports": "Uplink interfaces",
+          "edge_ports": "Direct end-device interfaces",
+          "port": "RPC HTTPS/HTTP port",
+          "https": "Use HTTPS",
+          "tls_fingerprint": "TLS SHA-256 fingerprint (optional)",
+          "use_primary_credentials": "Use primary router credentials",
+          "wifi": "Read Wi-Fi clients from hostapd"
+        },
+        "data_description": {
+          "uplink_ports": "Separated by commas or spaces; these ports lead toward upstream devices.",
+          "edge_ports": "Use only verified end-device Ethernet ports. Do not include AP or switch uplinks.",
+          "use_primary_credentials": "If disabled, the next form will ask for an independent RPC login.",
+          "tls_fingerprint": "64 hex digits, optionally colon-separated; HTTPS required.",
+          "host": "RPC endpoint; no URL prefix or path."
+        }
+      },
+      "credentials": {
+        "title": "RPC login for this device",
+        "description": "Enter credentials for this OpenWrt node. On edit, leave password empty to retain the stored one.",
+        "data": {
+          "username": "RPC username",
+          "password": "RPC password"
+        }
+      },
+      "add_virtual": {
+        "title": "Add unmanaged switch",
+        "description": "A virtual node is not queried; downstream port information cannot be obtained from an unmanaged switch.",
+        "data": {
+          "host": "Unique identifier (not necessarily an IP)",
+          "name": "Display name",
+          "upstream": "Connected to",
+          "parent_port": "Port on upstream device"
+        }
+      },
+      "edit_virtual": {
+        "title": "Edit unmanaged switch",
+        "description": "A virtual node is not queried; downstream port information cannot be obtained from an unmanaged switch.",
+        "data": {
+          "host": "Unique identifier (not necessarily an IP)",
+          "name": "Display name",
+          "upstream": "Connected to",
+          "parent_port": "Port on upstream device"
+        }
+      },
+      "edit_select": {
+        "title": "Choose device to edit",
+        "data": {
+          "device": "Device"
+        }
+      },
+      "remove_select": {
+        "title": "Choose device to remove",
+        "data": {
+          "device": "Device"
+        }
+      },
+      "remove_confirm": {
+        "title": "Confirm removal",
+        "description": "Remove {device} from the inventory? No device configuration will be changed on OpenWrt.",
+        "data": {
+          "confirm": "Yes, remove this device"
+        }
+      },
+      "finish": {
+        "title": "Save inventory"
       }
     },
     "error": {
-      "invalid_configuration": "Invalid JSON nodes, uplink ports, topology, or VLAN mapping"
+      "invalid_configuration": "Invalid node, duplicate address, invalid uplink, topology cycle or VLAN mapping.",
+      "cannot_connect": "Cannot connect to the required read-only RPC methods. Check IP, HTTPS, credentials, ACL and helper on the device.",
+      "password_required": "Enter a password for this device.",
+      "has_children": "This device is upstream of others. Remove or reassign its children first."
     }
   }
 }

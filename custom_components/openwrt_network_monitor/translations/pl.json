@@ -28,27 +28,138 @@
   "options": {
     "step": {
       "init": {
-        "title": "Ustawienia monitorowania sieci",
+        "title": "Urządzenia w sieci",
+        "description": "Urządzenia dodatkowe: {count}. Aktualna lista: {devices}. Zmiany zostaną zastosowane dopiero po wybraniu Zapisz i zakończ.",
+        "menu_options": {
+          "settings": "Ustawienia ogólne",
+          "add_node": "Dodaj router, AP lub switch OpenWrt",
+          "add_virtual": "Dodaj switch niezarządzalny (wirtualny)",
+          "edit_select": "Edytuj urządzenie",
+          "remove_select": "Usuń urządzenie",
+          "finish": "Zapisz i zakończ"
+        }
+      },
+      "settings": {
+        "title": "Ogólne ustawienia monitoringu",
         "data": {
-          "home_zone": "Strefa połączenia",
-          "interval": "Interwał odpytywania (s)",
-          "grace_seconds": "Opóźnienie nieobecności (s)",
-          "wired_enabled": "Wykrywaj klientów Ethernet przez FDB",
-          "central_usteer": "Uwzględnij centralne usteer (może mieć nieaktualne wpisy)",
+          "home_zone": "Strefa obecności",
+          "interval": "Interwał odpytywania (sekundy)",
+          "grace_seconds": "Opóźnienie zgłoszenia nieobecności (sekundy)",
+          "wired_enabled": "Monitoruj klientów Ethernet",
+          "central_usteer": "Uzupełniaj dane Wi-Fi z centralnego usteer (możliwe nieaktualne wpisy)",
           "primary_name": "Nazwa głównego routera",
           "primary_uplink_ports": "Porty uplink głównego routera",
-          "nodes_json": "Pozostałe routery/AP OpenWrt (JSON)",
-          "vlan_map": "Opcjonalne mapowanie interfejs=VLAN",
-          "primary_edge_ports": "Porty Ethernet z potwierdzonymi klientami końcowymi"
+          "primary_edge_ports": "Potwierdzone porty Ethernet klientów końcowych",
+          "vlan_map": "Opcjonalne mapowanie interfejs=VLAN"
         },
         "data_description": {
-          "nodes_json": "Każdy wpis może zawierać host, name, upstream, uplink_ports, role, port, https, username i password; szczegóły w README.",
-          "vlan_map": "Jeden wpis interfejs=VID w wierszu albo lista rozdzielona przecinkami. Brak stałych ustawień."
+          "primary_uplink_ports": "Nazwy interfejsów rozdzielone przecinkami lub spacjami.",
+          "primary_edge_ports": "Tylko porty urządzeń końcowych; nigdy uplinki AP lub trunk.",
+          "vlan_map": "Opcjonalne nadpisanie. Jeden wpis interfejs=VID na wiersz."
         }
+      },
+      "add_node": {
+        "title": "Dodaj urządzenie OpenWrt",
+        "data": {
+          "host": "Nazwa hosta lub adres IP",
+          "name": "Nazwa wyświetlana",
+          "role": "Rola urządzenia",
+          "upstream": "Urządzenie nadrzędne",
+          "uplink_ports": "Interfejsy uplink",
+          "edge_ports": "Interfejsy bezpośrednich klientów",
+          "port": "Port RPC HTTPS/HTTP",
+          "https": "Używaj HTTPS",
+          "tls_fingerprint": "Odcisk TLS SHA-256 (opcjonalnie)",
+          "use_primary_credentials": "Użyj danych logowania głównego routera",
+          "wifi": "Odczytuj klientów Wi-Fi z hostapd"
+        },
+        "data_description": {
+          "uplink_ports": "Nazwy portów rozdzielone przecinkami lub spacjami; prowadzą do urządzeń nadrzędnych.",
+          "edge_ports": "Tylko potwierdzone porty urządzeń końcowych. Nie podawaj uplinków AP/switchy.",
+          "use_primary_credentials": "Po wyłączeniu następny formularz poprosi o oddzielne dane logowania RPC.",
+          "tls_fingerprint": "64 znaki szesnastkowe, opcjonalnie z dwukropkami; wymaga HTTPS.",
+          "host": "Adres RPC bez prefiksu URL i ścieżki."
+        }
+      },
+      "edit_node": {
+        "title": "Edytuj urządzenie OpenWrt",
+        "data": {
+          "host": "Nazwa hosta lub adres IP",
+          "name": "Nazwa wyświetlana",
+          "role": "Rola urządzenia",
+          "upstream": "Urządzenie nadrzędne",
+          "uplink_ports": "Interfejsy uplink",
+          "edge_ports": "Interfejsy bezpośrednich klientów",
+          "port": "Port RPC HTTPS/HTTP",
+          "https": "Używaj HTTPS",
+          "tls_fingerprint": "Odcisk TLS SHA-256 (opcjonalnie)",
+          "use_primary_credentials": "Użyj danych logowania głównego routera",
+          "wifi": "Odczytuj klientów Wi-Fi z hostapd"
+        },
+        "data_description": {
+          "uplink_ports": "Nazwy portów rozdzielone przecinkami lub spacjami; prowadzą do urządzeń nadrzędnych.",
+          "edge_ports": "Tylko potwierdzone porty urządzeń końcowych. Nie podawaj uplinków AP/switchy.",
+          "use_primary_credentials": "Po wyłączeniu następny formularz poprosi o oddzielne dane logowania RPC.",
+          "tls_fingerprint": "64 znaki szesnastkowe, opcjonalnie z dwukropkami; wymaga HTTPS.",
+          "host": "Adres RPC bez prefiksu URL i ścieżki."
+        }
+      },
+      "credentials": {
+        "title": "Dane logowania RPC tego urządzenia",
+        "description": "Wprowadź dane logowania tego urządzenia. Podczas edycji puste hasło oznacza zachowanie dotychczasowego.",
+        "data": {
+          "username": "Użytkownik RPC",
+          "password": "Hasło RPC"
+        }
+      },
+      "add_virtual": {
+        "title": "Dodaj switch niezarządzalny",
+        "description": "Węzeł wirtualny nie jest odpytywany; nie można odczytać portów klientów switcha niezarządzalnego.",
+        "data": {
+          "host": "Unikalny identyfikator (nie musi być adresem IP)",
+          "name": "Nazwa wyświetlana",
+          "upstream": "Podłączony do",
+          "parent_port": "Port urządzenia nadrzędnego"
+        }
+      },
+      "edit_virtual": {
+        "title": "Edytuj switch niezarządzalny",
+        "description": "Węzeł wirtualny nie jest odpytywany; nie można odczytać portów klientów switcha niezarządzalnego.",
+        "data": {
+          "host": "Unikalny identyfikator (nie musi być adresem IP)",
+          "name": "Nazwa wyświetlana",
+          "upstream": "Podłączony do",
+          "parent_port": "Port urządzenia nadrzędnego"
+        }
+      },
+      "edit_select": {
+        "title": "Wybierz urządzenie do edycji",
+        "data": {
+          "device": "Urządzenie"
+        }
+      },
+      "remove_select": {
+        "title": "Wybierz urządzenie do usunięcia",
+        "data": {
+          "device": "Urządzenie"
+        }
+      },
+      "remove_confirm": {
+        "title": "Potwierdź usunięcie",
+        "description": "Usunąć {device} z listy? Konfiguracja OpenWrt nie zostanie zmieniona.",
+        "data": {
+          "confirm": "Tak, usuń to urządzenie"
+        }
+      },
+      "finish": {
+        "title": "Zapisz listę urządzeń"
       }
     },
     "error": {
-      "invalid_configuration": "Nieprawidłowa konfiguracja JSON, VLAN lub topologii"
+      "invalid_configuration": "Błędne dane urządzenia, duplikat adresu, uplink, cykl topologii lub mapowanie VLAN.",
+      "cannot_connect": "Nie można odczytać wymaganych metod RPC. Sprawdź adres, HTTPS, dane logowania, ACL i moduł na urządzeniu.",
+      "password_required": "Wprowadź hasło dla tego urządzenia.",
+      "has_children": "Do tego urządzenia przypisano urządzenia podrzędne. Najpierw je usuń lub przypisz inaczej."
     }
   }
 }
