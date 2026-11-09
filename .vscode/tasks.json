@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Make package",
+            "type": "shell",
+            "command": "rm -f '${workspaceFolder}/openwrt_network_monitor.zip'; zip -r '${workspaceFolder}/openwrt_network_monitor.zip' $(ls | grep -v __pycache__)",
+            "options": {
+                "cwd": "${workspaceFolder}/custom_components/mpk_lodz"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+    ]
+}
