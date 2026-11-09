@@ -98,10 +98,9 @@ class OpenWrtNetworkClientTracker(CoordinatorEntity, ScannerEntity):
         zone = self._entry.options.get(CONF_ZONE, self._entry.data.get(CONF_ZONE, DEFAULT_ZONE))
         registry = er.async_get(self.hass)
         reg_entry = registry.async_get(self.entity_id)
-        if reg_entry and reg_entry.options.get("device_tracker", {}).get(CONF_ASSOCIATED_ZONE) != zone:
-            opts = dict(reg_entry.options)
-            opts["device_tracker"] = {**opts.get("device_tracker", {}), CONF_ASSOCIATED_ZONE: zone}
-            registry.async_update_entity(self.entity_id, options=opts)
+        if reg_entry and (old_opts := reg_entry.options.get("device_tracker", {})).get(CONF_ASSOCIATED_ZONE) != zone:
+            opts = {**old_opts, CONF_ASSOCIATED_ZONE: zone}
+            registry.async_update_entity_options(self.entity_id, "device_tracker", opts)
 
     @callback
     def _handle_coordinator_update(self):
